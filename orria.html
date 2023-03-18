@@ -1,0 +1,66 @@
+<!--
+Egilea: Maitane Urruela
+Data: 27/02/2023
+Irakasgaia: Web Sistemak (3. maila)
+-->
+
+<!DOCTYPE html>
+<html lang="eu">
+<head>
+    <meta charset="UTF-8">
+    <title>GRAFIKA</title>
+    <script type="text/javascript" src="https://www.gstatic.com/charts/loader.js"></script>
+    <script type="text/javascript">
+        // Load the Visualization API and the corechart package.
+        google.charts.load('current', {'packages':['corechart']});
+        function feedsData() {
+            var xhttp = new XMLHttpRequest();
+            var uri = "https://api.thingspeak.com/channels/2045654/feeds.json";
+            //Gehitzeko URI-aren barruan parametroak. Kasu honetan ApiKey, kanal pribatua atzitzeko 
+            //eta lehen 100 laginak bueltatzeko emaitzean 'results' parametroa
+            var param = 'api_key=3BB448RTJH59B6KE&results=100';
+
+            xhttp.onreadystatechange = function() {
+                 if(this.readyState == 4 && this.status == 200) {
+                     var responseData = JSON.parse(xhttp.responseText);
+                     drawChart(responseData);
+                 };
+            };
+            // inicializar la petición HTTP
+            xhttp.open("GET", uri+"?"+param, true);
+            // enviar la petición HTTP
+            xhttp.send();
+        }
+        function drawChart(responseData){
+            //Dokumentazioa: https://developers.google.com/chart/interactive/docs/quick_start?hl=es-41
+
+            var data = new google.visualization.DataTable();
+
+            data.addColumn('string', 'Created At');
+            data.addColumn('number', 'CPU');
+            data.addColumn('number', 'RAM');
+            var feeds =responseData['feeds'];
+
+            for (var feed of feeds){
+                var fila = [];
+                fila.push(feed['created_at'].split('T')[1].slice(0,-1));
+                fila.push(parseFloat(feed['field1']));
+                fila.push(parseFloat(feed['field2']));
+                data.addRow(fila)
+            }
+            //Opzioak (emandakoak)
+            var options = {
+                title: 'Computer performance', legend: {position: 'bottom'},
+                curveType: 'function', colors: ['red', 'blue'],
+                series: {0: {targetAxisIndex: 0}, 1: {targetAxisIndex: 1}},
+                vAxes: {0: {title: '%CPU'}, 1: {title: '%RAM'}}
+            };
+            var chart = new google.visualization.LineChart(document.getElementById('curve_chart'));
+            chart.draw(data, options);
+        }
+    </script>
+</head>
+<body onload="feedsData()">
+<div id="curve_chart" style="width: 900px; height: 500px; margin: 0 auto"></div>
+</body>
+</html>
